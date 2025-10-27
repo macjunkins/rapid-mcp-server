@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.env
+.env.*
+coverage/
+logs/
+*.log
+*.lock-wip
+.DS_Store
+.turbo/
+.vite/
+tmp/
