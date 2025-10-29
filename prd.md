@@ -100,7 +100,7 @@ rapid-mcp-server/              # This repository
 │   ├── validator.zig          # Parameter validation engine
 │   ├── github.zig             # GitHub CLI wrapper (std.process)
 │   ├── yaml_schema.zig        # YAML command schema definitions
-│   └── http_bridge.zig        # Optional HTTP server (Phase 4)
+│   └── http_bridge.zig        # Optional HTTP server (Milestone 4)
 ├── commands/                   # YAML command definitions (source of truth)
 │   ├── sanity-check.yaml      # Convert from existing .md files
 │   ├── gh-work.yaml
@@ -149,7 +149,7 @@ prompt: |                 # Multi-line workflow instructions
   The actual AI prompt text with {{parameter}} placeholders.
   This is the workflow that gets executed when the tool is called.
 
-metadata:                 # Extensibility for RapidOS integration (Phase 5)
+metadata:                 # Extensibility for RapidOS integration (Milestone 5)
   os_integration:
     requires_git: boolean
     requires_gh_cli: boolean
@@ -448,7 +448,7 @@ The server must implement these MCP protocol methods:
 
 ### Implementation Strategy
 
-**Phase 1 (MVP):** Custom pattern validators
+**Milestone 1 (MVP):** Custom pattern validators
 - No regex library dependency
 - Hand-coded validators for common patterns:
   - Repository: `owner/name` format (alphanumeric + hyphens, single slash)
@@ -456,7 +456,7 @@ The server must implement these MCP protocol methods:
   - Issue numbers: positive integers
   - Email: basic format check
 
-**Phase 2 (Future):** Add PCRE binding if complex patterns needed
+**Milestone 2 (Future):** Add PCRE binding if complex patterns needed
 
 ---
 
@@ -520,9 +520,9 @@ gh issue list --json number,title,state,labels --limit 10
 
 ---
 
-## Implementation Phases
+## Implementation Milestones
 
-## Phase 1: Foundation & Prototyping (MVP Core)
+## Milestone 1: Foundation & Prototyping (MVP Core)
 
 **Goal:** Prove Zig + MCP + YAML architecture works end-to-end
 
@@ -604,7 +604,7 @@ gh issue list --json number,title,state,labels --limit 10
 - Parse JSON response successfully
 - Return structured data to command handler
 
-**Phase 1 Success Criteria:**
+**Milestone 1 Success Criteria:**
 - ✅ Zig project compiles and runs
 - ✅ Responds to MCP initialize handshake
 - ✅ Lists 3 commands via `tools/list`
@@ -613,7 +613,7 @@ gh issue list --json number,title,state,labels --limit 10
 
 ---
 
-## Phase 2: MVP Implementation (3 Commands)
+## Milestone 2: MVP Implementation (3 Commands)
 
 **Goal:** Full end-to-end execution of 3 commands
 
@@ -685,7 +685,7 @@ gh issue list --json number,title,state,labels --limit 10
 - Error handling verified
 - Performance acceptable (< 100ms startup)
 
-**Phase 2 Success Criteria:**
+**Milestone 2 Success Criteria:**
 - ✅ `sanity-check` command executes successfully
 - ✅ `gh-work` fetches GitHub issues
 - ✅ `create-issue` creates issues via gh CLI
@@ -694,7 +694,7 @@ gh issue list --json number,title,state,labels --limit 10
 
 ---
 
-## Phase 3: Full Command Port (22 Remaining Commands)
+## Milestone 3: Full Command Port (22 Remaining Commands)
 
 **Goal:** Convert all 25 RAPID commands to YAML and implement handlers
 
@@ -754,7 +754,7 @@ gh issue list --json number,title,state,labels --limit 10
 - [ ] Document adding new commands (template YAML)
 - [ ] Update README with full command list
 
-**Phase 3 Success Criteria:**
+**Milestone 3 Success Criteria:**
 - ✅ All 25 commands converted to YAML
 - ✅ All commands execute successfully
 - ✅ Comprehensive error handling
@@ -763,7 +763,7 @@ gh issue list --json number,title,state,labels --limit 10
 
 ---
 
-## Phase 4: Optional HTTP Bridge
+## Milestone 4: Optional HTTP Bridge
 
 **Goal:** Support non-MCP clients (VS Code, Codex, legacy tools)
 
@@ -791,7 +791,7 @@ gh issue list --json number,title,state,labels --limit 10
 - [ ] Document VS Code task configuration
 - [ ] Test with Copilot integration
 
-**Phase 4 Success Criteria:**
+**Milestone 4 Success Criteria:**
 - ✅ HTTP bridge running on localhost:5001
 - ✅ VS Code tasks can call commands
 - ✅ Non-MCP clients supported
@@ -799,7 +799,7 @@ gh issue list --json number,title,state,labels --limit 10
 
 ---
 
-## Phase 5: RapidOS Integration Prep
+## Milestone 5: RapidOS Integration Prep
 
 **Goal:** Prepare for RapidOS system-level integration
 
@@ -842,7 +842,7 @@ metadata:
 - [ ] System service configuration
 - [ ] Integration with RapidOS AI orchestration layer
 
-**Phase 5 Success Criteria:**
+**Milestone 5 Success Criteria:**
 - ✅ Static binary builds successfully
 - ✅ Cross-platform compatibility verified
 - ✅ System service configuration complete
@@ -868,7 +868,7 @@ metadata:
    - License: MIT
    - Features: YAML 1.2 compatible, pure Zig
 
-3. **http.zig (httpz)** - HTTP server (Phase 4)
+3. **http.zig (httpz)** - HTTP server (Milestone 4)
    - Repository: https://github.com/karlseguin/http.zig
    - License: MIT
    - Features: Pure Zig, ~140K req/s performance
@@ -1014,7 +1014,7 @@ metadata:
 
 ## Timeline & Milestones
 
-### Phase 1: Foundation (Weeks 1-2)
+### Milestone 1: Foundation (Weeks 1-2)
 **Duration:** 1-2 weeks
 **Deliverables:**
 - Zig project setup with dependencies
@@ -1023,14 +1023,14 @@ metadata:
 - Parameter validation system
 - GitHub CLI integration
 
-### Phase 2: MVP (Week 3)
+### Milestone 2: MVP (Week 3)
 **Duration:** 1 week
 **Deliverables:**
 - Command loader
 - 3 commands fully implemented
 - End-to-end testing with Claude Code
 
-### Phase 3: Full Port (Weeks 4-6)
+### Milestone 3: Full Port (Weeks 4-6)
 **Duration:** 2-3 weeks
 **Deliverables:**
 - All 25 commands converted and implemented
@@ -1038,14 +1038,14 @@ metadata:
 - Full test suite
 - Documentation
 
-### Phase 4: HTTP Bridge (Week 7)
+### Milestone 4: HTTP Bridge (Week 7)
 **Duration:** 1 week
 **Deliverables:**
 - HTTP server implementation
 - VS Code integration examples
 - Configuration system
 
-### Phase 5: RapidOS Prep (Week 8)
+### Milestone 5: RapidOS Prep (Week 8)
 **Duration:** 1 week
 **Deliverables:**
 - System integration metadata
@@ -1062,13 +1062,13 @@ metadata:
    - **Proposed:** Version field in YAML; support multiple versions simultaneously
 
 2. **Hot reload:** Should server reload YAML files on change?
-   - **Proposed:** Nice for dev, skip for MVP; add in Phase 3
+   - **Proposed:** Nice for dev, skip for MVP; add in Milestone 3
 
 3. **Multi-repo support:** Can commands work across different git repos?
    - **Proposed:** Already supported via `-R owner/repo` flag in gh CLI
 
 4. **Telemetry:** Should we add usage metrics for RapidOS?
-   - **Proposed:** Phase 5 consideration; opt-in only
+   - **Proposed:** Milestone 5 consideration; opt-in only
 
 5. **Backward compatibility:** How to handle breaking changes to commands?
    - **Proposed:** Semantic versioning; deprecation warnings
@@ -1117,7 +1117,7 @@ metadata:
 1. Review and approve PRD
 2. Initialize Zig project in this repository
 3. Set up `build.zig` with dependencies
-4. Begin Phase 1: Foundation
+4. Begin Milestone 1: Foundation
 
 **Prepared by:** John Junkins (@macjunkins)
 **Date:** 2025-10-28
