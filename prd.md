@@ -1,9 +1,9 @@
 # Product Requirements Document: Rapid MCP Server (Zig Implementation)
 
-**Version:** 1.0
-**Date:** 2025-10-28
+**Version:** 1.1
+**Date:** 2025-10-29 (Updated from 2025-10-28)
 **Author:** John Junkins (@macjunkins)
-**Status:** Draft - Ready for Implementation
+**Status:** Revised - Reality Check Complete, Ready for Implementation
 
 ---
 
@@ -119,6 +119,22 @@ rapid-mcp-server/              # This repository
 
 ## YAML Command Schema
 
+### Discovery from Prototype Conversion
+
+**Key Finding:** Converted [sanity-check.md](commands/sanity-check.md) to [sanity-check.yaml](commands/sanity-check.yaml) - revealed template engine requirement.
+
+**Challenges Found:**
+1. **Optional flags** (`--strict`, `--reset`, `--scope`) → Mapped to boolean/string parameters ✅
+2. **Conditional prompt logic** ("if strict mode", "if scope provided") → Requires template engine (Handlebars-style `{{#if}}`)
+3. **Dynamic text insertion** → Simple `{{parameter}}` substitution works for MVP
+
+**Implications:**
+- **MVP Approach:** Simple string replacement (`{{parameter}}`) for basic commands
+- **Post-MVP:** Add template engine library for complex conditionals (contradicts "zero dependencies")
+- **Alternative:** Pre-render all conditional variants (explosion of YAML files)
+
+**Decision Required:** Accept template engine dependency or simplify command workflows?
+
 ### Schema Structure
 
 ```yaml
@@ -145,9 +161,14 @@ examples:                 # Usage examples for AI context
   - description: string   # Example description
     args: object          # Example arguments
 
-prompt: |                 # Multi-line workflow instructions
-  The actual AI prompt text with {{parameter}} placeholders.
-  This is the workflow that gets executed when the tool is called.
+prompt: |                 # Multi-line workflow instructions with template syntax
+  The actual AI prompt text with template placeholders:
+  - {{parameter}} - Simple substitution
+  - {{#if parameter}}...{{/if}} - Conditional blocks (requires template engine)
+  - {{#each array}}...{{/each}} - Iteration (requires template engine)
+
+  **Note:** Complex commands may require Handlebars-style template engine.
+  MVP may use simple string replacement only.
 
 metadata:                 # Extensibility for RapidOS integration (Milestone 5)
   os_integration:
@@ -448,15 +469,24 @@ The server must implement these MCP protocol methods:
 
 ### Implementation Strategy
 
-**Milestone 1 (MVP):** Custom pattern validators
-- No regex library dependency
-- Hand-coded validators for common patterns:
-  - Repository: `owner/name` format (alphanumeric + hyphens, single slash)
-  - Branch names: alphanumeric + `/_-` characters
-  - Issue numbers: positive integers
-  - Email: basic format check
+**Milestone 1 (MVP):** Custom string-matching validators
+- **No regex engine** - hand-coded character-by-character validation
+- Simple pattern validators for common cases:
+  - Repository: Check for `owner/name` format (alphanumeric + hyphens + underscores, single slash)
+  - Branch names: Character-by-character check for allowed chars (alphanumeric + `/_-`)
+  - Issue numbers: Integer parsing only (reject non-numeric)
+  - Labels: Alphanumeric + hyphens + underscores
+- **Limitation:** Cannot express complex patterns like email validation
+- **Trade-off:** Zero dependencies vs limited validation expressiveness
 
-**Milestone 2 (Future):** Add PCRE binding if complex patterns needed
+**Milestone 2 (Post-MVP):** Add regex library if needed
+- Options: PCRE binding, or Zig regex library if available
+- **Note:** This contradicts "zero dependencies" goal - decision required before Milestone 2
+
+**YAML Schema Pattern Field:**
+- Patterns defined in YAML (e.g., `pattern: "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$"`) are **documentation only** for MVP
+- Actual validation uses hand-coded string matching, not regex evaluation
+- Post-MVP: May implement regex evaluation if library added
 
 ---
 
@@ -510,6 +540,43 @@ gh issue create --title "Title" --body "Body" --label "bug,enhancement"
 gh issue list --json number,title,state,labels --limit 10
 ```
 
+### Security: Shell Injection Prevention
+
+**Critical:** All parameters from AI clients must be sanitized before passing to `gh` CLI to prevent shell injection attacks.
+
+**Validation Rules:**
+- **Repository names:** Must match `^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$` (alphanumeric, hyphens, underscores, single slash)
+- **Branch names:** Must match `^[a-zA-Z0-9/_-]+$` (no shell metacharacters: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `<`, `>`)
+- **Issue numbers:** Must be positive integers only (no strings, no special characters)
+- **Labels:** Alphanumeric, hyphens, underscores only (comma-separated list validated individually)
+- **Titles/Bodies:** Pass via heredoc or stdin, never via command-line arguments directly
+
+**Implementation Strategy:**
+```zig
+fn sanitizeRepoName(name: []const u8) ![]const u8 {
+    // Validate format: owner/repo
+    // Reject if contains shell metacharacters
+    // Reject if contains path traversal (.., /)
+    // Max length: 100 characters
+}
+
+fn sanitizeBranchName(name: []const u8) ![]const u8 {
+    // Allow: alphanumeric, /, _, -
+    // Reject: all other characters
+    // Max length: 255 characters
+}
+```
+
+**Example Attack Prevention:**
+```zig
+// UNSAFE: AI hallucinates malicious input
+issue_number = "42; rm -rf /"  // ❌ Would execute: gh issue view 42; rm -rf /
+
+// SAFE: Validation catches injection
+const validated = try validateIssueNumber(issue_number);
+// Returns error.InvalidIssueNumber - string contains non-numeric characters
+```
+
 ### Error Handling
 
 - Command not found (gh not installed)
@@ -517,6 +584,7 @@ gh issue list --json number,title,state,labels --limit 10
 - Network errors
 - Invalid JSON response
 - GitHub API rate limits
+- **Shell injection attempts** (validation errors)
 
 ---
 
@@ -763,9 +831,21 @@ gh issue list --json number,title,state,labels --limit 10
 
 ---
 
-## Milestone 4: Optional HTTP Bridge
+## Milestone 4: HTTP Bridge (Optional - Scope Clarification)
 
-**Goal:** Support non-MCP clients (VS Code, Codex, legacy tools)
+**Status:** OPTIONAL - Not required for core MCP server functionality
+
+**Goal:** Support non-MCP clients (VS Code tasks, legacy tools, manual testing)
+
+**Recommendation:** Skip for MVP. Add only if non-MCP client support becomes a hard requirement.
+
+**Why Optional:**
+- MCP clients (Claude Code, Copilot, etc.) are the primary use case
+- Adds http.zig dependency (contradicts "zero dependencies" goal)
+- VS Code can use MCP protocol directly (no HTTP bridge needed)
+- Increases complexity and attack surface
+
+**If Implemented:**
 
 ### 4.1 HTTP Server Implementation
 **Tasks:**
@@ -858,15 +938,17 @@ metadata:
 - Zig 0.14.0+ (or latest stable)
 
 **Libraries:**
-1. **ZigJR** - JSON-RPC 2.0 library
+1. **ZigJR** - JSON-RPC 2.0 library (foundation only)
    - Repository: https://github.com/williamw520/zigjr
    - License: MIT
-   - Features: Type-safe RPC, stdio transport, MCP example included
+   - Features: Type-safe RPC, stdio transport, JSON-RPC 2.0 compliance
+   - **Important:** Provides JSON-RPC infrastructure only. MCP protocol layer must be implemented manually.
 
 2. **zig-yaml** - YAML parsing
    - Repository: https://github.com/kubkon/zig-yaml
    - License: MIT
    - Features: YAML 1.2 compatible, pure Zig
+   - **Note:** Maintainer describes as "work-in-progress" - performance characteristics unverified
 
 3. **http.zig (httpz)** - HTTP server (Milestone 4)
    - Repository: https://github.com/karlseguin/http.zig
@@ -909,7 +991,7 @@ metadata:
 21. `risk-assess` - Risk assessment
 22. `correct-course` - Course correction guidance
 
-### Utility Commands (4)
+### Utility Commands (3)
 23. `research-prompt` - Generate research prompt
 24. `gen-prompt` - Generate specialized prompt
 25. `trace-requirements` - Trace requirements to implementation
@@ -919,11 +1001,16 @@ metadata:
 ## Success Metrics
 
 ### Performance Targets
-- **Startup time:** < 50ms (cold start)
-- **Command latency:** < 100ms (YAML load + validation)
-- **GitHub CLI overhead:** < 500ms (network dependent)
-- **Memory footprint:** < 10MB (resident)
-- **Binary size:** < 5MB (static binary)
+
+**Note:** These are aspirational targets, not verified benchmarks. Actual performance will be measured during implementation.
+
+- **Startup time:** Target < 50ms (cold start) - *unverified until benchmarking complete*
+- **Command latency:** Target < 100ms (YAML load + validation) - *depends on zig-yaml performance*
+- **GitHub CLI overhead:** ~500ms+ (network dependent) - *will dominate total latency in practice*
+- **Memory footprint:** Target < 10MB (resident) - *unverified, depends on command registry size*
+- **Binary size:** Target < 5MB (static binary) - *depends on final dependency tree*
+
+**Reality check:** GitHub CLI network calls will be the dominant latency factor (500ms+), making server startup time optimizations less impactful for user-perceived performance.
 
 ### Quality Targets
 - **Test coverage:** > 80% (unit + integration)
@@ -965,6 +1052,79 @@ metadata:
 - Codex CLI
 - VS Code tasks
 - Generic MCP clients
+
+---
+
+## Implementation Reality Check
+
+### This Is Pioneering Work
+
+**Fact:** No mature Zig MCP server implementations exist as reference.
+- lsp-mcp-server is an LSP↔MCP bridge, not a pure MCP server
+- zig-mcp is 88.6% TypeScript, not a Zig implementation guide
+- ZigJR provides JSON-RPC only, not MCP protocol
+
+**Implication:** You'll be building the MCP layer from scratch on top of ZigJR.
+
+### Dependency Contradictions
+
+**Goal:** "Zero dependencies, single static binary"
+
+**Reality:** Will likely need:
+1. zig-yaml (required for YAML parsing) ✅ Acceptable
+2. Template engine (for conditional prompt logic) ⚠️ Contradicts goal
+3. Regex library (for robust validation) ⚠️ Contradicts goal
+4. http.zig (if HTTP bridge implemented) ⚠️ Contradicts goal
+
+**Decision Point:** Accept dependencies or simplify feature scope?
+
+### Unverified Assumptions
+
+**Performance Claims:**
+- "< 50ms startup" - Unverified with YAML parsing overhead
+- "< 100ms command latency" - Depends on zig-yaml performance (marked "work in progress")
+- Network-bound `gh` CLI calls (500ms+) will dominate actual latency anyway
+
+**YAML Schema:**
+- Prototype revealed need for template engine
+- 25 commands may have varying complexity levels
+- Some commands may not fit schema cleanly
+
+**Timeline:**
+- Original: "6-8 weeks"
+- Realistic: **8-12 weeks** accounting for:
+  - Learning Zig ecosystem edge cases
+  - Building MCP protocol layer from scratch
+  - Discovering and resolving YAML conversion challenges
+  - Testing with real AI clients
+
+### Success Criteria Clarification
+
+**MVP Definition:**
+- 3 working commands (sanity-check, gh-work, create-issue)
+- MCP protocol compliance (verified with Claude Code)
+- Parameter validation working
+- GitHub CLI integration working
+- **Accept:** Simple string substitution, no template engine
+- **Accept:** Hand-coded validation, no regex library
+- **Skip:** HTTP bridge (Milestone 4 truly optional)
+
+**Post-MVP Features:**
+- Remaining 22 commands
+- Template engine for complex workflows
+- Regex library for robust validation
+- HTTP bridge (if needed)
+
+### Contingency Plan
+
+**If Zig proves too difficult:**
+- **Fallback Option 1:** Go implementation (better stdlib, mature ecosystem)
+- **Fallback Option 2:** Rust implementation (strong typing, good FFI)
+- **Fallback Option 3:** Node.js (works, but abandons performance goals)
+
+**Decision point:** After Milestone 1 completion (Foundation)
+- If ZigJR integration is smooth → Continue
+- If hitting too many roadblocks → Pivot to Go/Rust
 
 ---
 
@@ -1052,7 +1212,13 @@ metadata:
 - Cross-platform binaries
 - System service configuration
 
-**Total Timeline:** 6-8 weeks
+**Total Timeline:** 8-12 weeks (revised from original 6-8 week estimate)
+
+**Timeline Adjustment Reasoning:**
+- Building MCP protocol layer from scratch (no reference implementation)
+- YAML conversion complexity discovered (template engine requirements)
+- Learning curve for Zig ecosystem edge cases
+- Integration testing with multiple MCP clients
 
 ---
 
@@ -1088,8 +1254,16 @@ metadata:
 - http.zig: https://github.com/karlseguin/http.zig
 
 ### Related Projects
-- lsp-mcp-server (Zig MCP implementation): https://github.com/nzrsky/lsp-mcp-server
-- zig-mcp (Zig docs MCP server): https://github.com/zig-wasm/zig-mcp
+
+**Important:** No pure Zig MCP server implementations exist as direct references. This project will be pioneering Zig MCP server development.
+
+- **lsp-mcp-server** (LSP↔MCP bridge in Zig): https://github.com/nzrsky/lsp-mcp-server
+  - Written in Zig, but bridges LSP to MCP rather than being a pure MCP server
+  - Useful for understanding Zig architecture patterns, not MCP implementation details
+
+- **zig-mcp** (Zig documentation MCP server): https://github.com/zig-wasm/zig-mcp
+  - **Primarily TypeScript (88.6%)**, not Zig (only 2.2% Zig code)
+  - Useful for understanding MCP server patterns, but not Zig implementation
 
 ### GitHub CLI
 - gh CLI docs: https://cli.github.com/manual/
@@ -1098,6 +1272,18 @@ metadata:
 ---
 
 ## Changelog
+
+**Version 1.1 (2025-10-29)**
+- **Critical corrections:** Clarified ZigJR provides JSON-RPC only (MCP layer must be built manually)
+- **Reference projects:** Corrected descriptions (lsp-mcp-server is bridge, zig-mcp is TypeScript)
+- **Performance claims:** Converted absolute claims to targets with disclaimers
+- **Security:** Added shell injection prevention strategy
+- **Validation:** Reconciled "no regex" contradiction, documented limitations
+- **YAML prototype:** Converted sanity-check.md to YAML, discovered template engine requirement
+- **Scope clarification:** HTTP bridge marked truly optional
+- **Reality check:** Added "Implementation Reality Check" section
+- **Timeline:** Revised to 8-12 weeks (from 6-8 weeks)
+- **Dependencies:** Acknowledged contradictions with "zero dependencies" goal
 
 **Version 1.0 (2025-10-28)**
 - Initial PRD based on brainstorming session

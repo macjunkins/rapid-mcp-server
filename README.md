@@ -22,15 +22,18 @@ This repository contains:
 ## Architecture Decision: Zig, Not Node.js
 
 **Why Zig?**
-- ⚡ Blazing fast startup (< 50ms vs Node.js ~200ms)
-- 📦 Zero dependencies - single static binary
+- ⚡ Performance target: < 50ms startup vs Node.js ~200ms (unverified)
+- 📦 Minimal dependencies goal - static binary (with zig-yaml)
 - 🛡️ Memory safety without GC overhead
 - 🔧 Easy C interop for system tools (gh CLI, git)
 - 🚀 Foundation for RapidOS "AI-first" operating system
+- 🎯 Pioneering work - no mature Zig MCP implementations exist yet
 
 **Strategic rationale:** Position RapidOS as an innovative, performance-focused platform by embracing emerging technologies early.
 
-See `prd.md` for full technical justification.
+**Reality check:** This is pioneering work. ZigJR provides JSON-RPC foundation only - MCP protocol layer must be built from scratch.
+
+See `prd.md` for full technical justification and implementation reality check.
 
 ---
 
@@ -103,7 +106,9 @@ See `prd.md` for full details. Summary:
 4. **Phase 4 (1 week):** Optional HTTP bridge for non-MCP clients
 5. **Phase 5 (1 week):** RapidOS integration prep, cross-platform binaries
 
-**Estimated timeline:** 6-8 weeks total
+**Estimated timeline:** 8-12 weeks total (revised from original 6-8 week estimate)
+
+**Timeline adjustment:** Accounts for building MCP layer from scratch, YAML conversion complexity, and Zig ecosystem learning curve.
 
 ---
 
@@ -164,9 +169,11 @@ Once implemented, you'll be able to:
 - Zig 0.14.0+ (build system + runtime)
 
 **Dependencies:**
-- [ZigJR](https://github.com/williamw520/zigjr) - JSON-RPC 2.0 + MCP protocol
-- [zig-yaml](https://github.com/kubkon/zig-yaml) - YAML parsing for command definitions
-- [http.zig](https://github.com/karlseguin/http.zig) - Optional HTTP bridge (Phase 4)
+- [ZigJR](https://github.com/williamw520/zigjr) - JSON-RPC 2.0 foundation (MCP layer built on top)
+- [zig-yaml](https://github.com/kubkon/zig-yaml) - YAML parsing (work-in-progress library)
+- [http.zig](https://github.com/karlseguin/http.zig) - Optional HTTP bridge (truly optional for MVP)
+
+**Important:** ZigJR provides JSON-RPC infrastructure only. MCP protocol methods must be implemented manually.
 
 **External Tools:**
 - GitHub CLI (`gh`) - All GitHub operations
@@ -176,10 +183,13 @@ Once implemented, you'll be able to:
 
 ## Performance Targets
 
-- Startup: < 50ms (cold start)
-- Command latency: < 100ms (YAML load + validation)
-- Memory: < 10MB (resident)
-- Binary size: < 5MB (static)
+**Note:** Aspirational targets, not verified benchmarks. Actual performance will be measured during implementation.
+
+- Startup: Target < 50ms (cold start) - *unverified*
+- Command latency: Target < 100ms (YAML load + validation) - *depends on zig-yaml*
+- Memory: Target < 10MB (resident) - *unverified*
+- Binary size: Target < 5MB (static) - *depends on dependencies*
+- **Reality:** GitHub CLI network calls (500ms+) will dominate total latency
 
 ---
 
@@ -196,8 +206,10 @@ Once implemented, you'll be able to:
 
 ## Related Projects
 
-- [lsp-mcp-server](https://github.com/nzrsky/lsp-mcp-server) - Zig MCP implementation example
-- [zig-mcp](https://github.com/zig-wasm/zig-mcp) - Zig docs MCP server
+**Note:** No mature Zig MCP server implementations exist as direct references. This is pioneering work.
+
+- [lsp-mcp-server](https://github.com/nzrsky/lsp-mcp-server) - LSP↔MCP bridge in Zig (not pure MCP server)
+- [zig-mcp](https://github.com/zig-wasm/zig-mcp) - Zig docs server (88.6% TypeScript, 2.2% Zig)
 - [MCP Specification](https://modelcontextprotocol.io) - Official protocol docs
 
 ---
