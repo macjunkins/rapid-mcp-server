@@ -1,0 +1,116 @@
+name: sanity-check
+version: "1.0.0"
+description: "Mid-brainstorm sanity check to ensure alignment with original intent"
+category: workflow
+
+parameters:
+  - name: strict
+    type: boolean
+    required: false
+    description: "Stop on any drift detection (strict mode)"
+    default: false
+
+  - name: reset
+    type: boolean
+    required: false
+    description: "Automatically apply correction without asking"
+    default: false
+
+  - name: scope
+    type: string
+    required: false
+    description: "Custom scope to anchor validation (e.g., 'MVP medication tracking only')"
+    validation:
+      max_length: 200
+
+examples:
+  - description: "Basic sanity check"
+    args: {}
+
+  - description: "Strict mode - stop on any drift"
+    args:
+      strict: true
+
+  - description: "Auto-reset with custom scope"
+    args:
+      reset: true
+      scope: "MVP medication tracking only"
+
+prompt: |
+  Use mid-brainstorm to ensure alignment to original intent.
+
+  ## Configuration
+  - Strict mode: {{strict}}
+  - Auto-reset: {{reset}}
+  {{#if scope}}- Custom scope: {{scope}}{{/if}}
+
+  ## Workflow (Follow exactly)
+
+  ### 1. Determine Original Intent
+  Restate the objective in one clear sentence using:
+  1. The explicit goal from the conversation
+  2. The referenced story or PRD
+  3. The last confirmed objective from the user
+
+  If unclear: ask user to restate goal before continuing.
+
+  ### 2. Summarize Current Trajectory
+  Summarize the last 3 assistant messages:
+  - One sentence per message
+  - Focus on outcomes not narrative
+
+  ### 3. Alignment Validation (Yes/No only)
+  - Same objective
+  - Same constraints
+  - Same audience
+  - Same boundaries and scope
+  - No irrelevant speculation or runaway creativity
+
+  ### 4. Score and Status
+  Count Yes responses:
+
+  - **5/5 Yes** → ✅ On Track
+  - **3–4 Yes** → ⚠️ Mild Drift
+  - **0–2 Yes** → ❌ Off Track
+
+  ### 5. If Drift Detected
+  Provide both:
+
+  A. Drift diagnosis (≤10 words)
+  B. One-sentence correction using this pattern:
+
+  RESET PROPOSAL:
+  Replace: {{off_track_behavior}}
+  With: {{aligned_behavior}}
+  Next will directly address: "{{ORIGINAL_INTENT}}"
+
+  {{#if reset}}
+  **Auto-reset enabled** - Apply correction automatically and continue with aligned behavior.
+  {{else}}
+  Stop and ask user:
+  - Proceed with correction? (Yes/No)
+  {{/if}}
+
+  {{#if strict}}
+  **Strict mode enabled** - Stop immediately if ANY drift detected (3-4 Yes is also a failure in strict mode).
+  {{/if}}
+
+  ### 6. Optional Scope Override
+  {{#if scope}}
+  Anchor validation to this scope: "{{scope}}"
+  {{else}}
+  Use conversation context to determine scope.
+  {{/if}}
+
+  ---
+
+  ## Notes
+  - Keep responses short and analytical
+  - Do not expand brainstorming during this step
+  - If strict mode enabled → stop on any drift
+
+metadata:
+  os_integration:
+    requires_git: false
+    requires_gh_cli: false
+    system_permissions: []
