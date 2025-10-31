@@ -467,4 +467,4 @@ When converting a command from `.md` to `.yaml`:
 - **Handlebars Syntax:** https://handlebarsjs.com/guide/
 - **YAML 1.2 Spec:** https://yaml.org/spec/1.2/spec.html
 - **Project PRD:** `/docs/prd.md`
-- **Issue #7:** Convert 3 MVP commands from .md to YAML format
+- **[Issue #7](https://github.com/owner/repo/issues/7):** Convert 3 MVP commands from .md to YAML format
