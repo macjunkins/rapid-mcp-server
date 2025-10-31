@@ -4,26 +4,44 @@ Prerequisites:
 - Install Zig 0.15.1 (`zig version` to verify)
 
 Commands:
-- Build: `zig build`
+- Build (Debug): `zig build`
+- Build (Release Safe): `zig build -Doptimize=ReleaseSafe`
+- Build (Release Fast): `zig build -Doptimize=ReleaseFast`
 - Run: `zig build run`
 
 This scaffolds the Rapid MCP Server and currently prints:
 `Rapid MCP Server - Foundation`
 
-## Dependencies (planned)
+## Dependencies
 
-Runtime dependencies will be added as the implementation proceeds:
-- ZigJR (JSON-RPC 2.0 foundation)
-- zig-yaml (YAML parsing)
+Runtime dependencies are configured in `build.zig.zon`:
+- **ZigJR** (JSON-RPC 2.0 foundation) - commit `1a783c5c7c01143001db2112d6feb4eb546dba0a`
+- **zig-yaml** (YAML parsing) - commit `a6c2cd8760bf45c49b17a3f6259c4dfe3ded528e` (with Zig 0.15.x support)
 
-These will be declared in `build.zig.zon` with pinned revisions and integrity hashes once versions are selected.
+All dependencies are automatically fetched by the Zig build system with pinned revisions and integrity hashes.
 
 ## Development setup
 
 1) Install Zig 0.15.1 and verify with `zig version`
 2) Clone the repo and change into the directory
-3) Build: `zig build`
+3) Build: `zig build` (dependencies will be fetched automatically on first build)
 4) Run: `zig build run`
+
+## Build Targets
+
+The build system supports multiple optimization modes:
+
+- **Debug** (default): `zig build`
+  - Full debug symbols and runtime safety checks
+  - Best for development and debugging
+
+- **ReleaseSafe**: `zig build -Doptimize=ReleaseSafe`
+  - Optimized for performance with safety checks enabled
+  - Recommended for production use
+
+- **ReleaseFast**: `zig build -Doptimize=ReleaseFast`
+  - Maximum performance, safety checks disabled
+  - Use only when performance is critical and code is well-tested
 
 ## Repository layout
 
@@ -57,9 +75,10 @@ This repository contains:
 - ✅ **25 RAPID command definitions** (`commands/*.md`) - Complete workflow playbooks
 - ✅ **Comprehensive PRD** (`prd.md`) - Full technical specification for Zig implementation
 - ✅ **Contributor guidelines** (`AGENTS.md`) - Repository expectations for agents and maintainers
-- ⏳ **No implementation yet** - Code coming soon
+- ✅ **Zig project foundation** - Build system configured with ZigJR and zig-yaml dependencies
+- ⏳ **Implementation in progress** - Phase 1 underway
 
-**Next up:** Begin Phase 1 implementation (Zig project setup + 3 MVP commands)
+**Next up:** Convert 3 MVP commands to YAML and implement core MCP protocol handlers
 
 ---
 
@@ -240,8 +259,8 @@ Once implemented, you'll be able to:
 ## Next Steps
 
 1. ✅ PRD complete (see `prd.md`)
-2. ⏳ Initialize Zig project in this repository
-3. ⏳ Set up `build.zig` with ZigJR + zig-yaml dependencies
+2. ✅ Initialize Zig project in this repository
+3. ✅ Set up `build.zig` with ZigJR + zig-yaml dependencies
 4. ⏳ Convert 3 MVP commands to YAML schema
 5. ⏳ Implement core MCP protocol handlers
 6. ⏳ End-to-end test with Claude Code

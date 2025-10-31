@@ -4,6 +4,16 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    // Import dependencies
+    const zigjr = b.dependency("zigjr", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const yaml = b.dependency("yaml", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
     const exe = b.addExecutable(.{
         .name = "rapid-mcp-server",
         .root_module = b.createModule(.{
@@ -12,6 +22,11 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+
+    // Expose dependencies to the executable
+    exe.root_module.addImport("zigjr", zigjr.module("zigjr"));
+    exe.root_module.addImport("yaml", yaml.module("yaml"));
+
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);
