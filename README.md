@@ -1,3 +1,47 @@
+## Build and Run (Zig 0.15.1)
+
+Prerequisites:
+- Install Zig 0.15.1 (`zig version` to verify)
+
+Commands:
+- Build: `zig build`
+- Run: `zig build run`
+
+This scaffolds the Rapid MCP Server and currently prints:
+`Rapid MCP Server - Foundation`
+
+## Dependencies (planned)
+
+Runtime dependencies will be added as the implementation proceeds:
+- ZigJR (JSON-RPC 2.0 foundation)
+- zig-yaml (YAML parsing)
+
+These will be declared in `build.zig.zon` with pinned revisions and integrity hashes once versions are selected.
+
+## Development setup
+
+1) Install Zig 0.15.1 and verify with `zig version`
+2) Clone the repo and change into the directory
+3) Build: `zig build`
+4) Run: `zig build run`
+
+## Repository layout
+
+```
+rapid-mcp-server/
+├── build.zig              # Build configuration
+├── build.zig.zon         # Package manifest (deps will be pinned)
+├── src/
+│   └── main.zig          # Entry point placeholder
+├── test/
+│   ├── unit/             # Unit tests (to be added)
+│   └── integration/      # Integration tests (to be added)
+├── docs/                 # Documentation
+├── commands/             # YAML command definitions (to be populated)
+├── prd.md                # Product requirements and architecture notes
+└── README.md             # You are here
+```
+
 # RAPID-MCP-Server
 
 **Status:** 📋 Planning Phase - PRD Complete, Implementation Pending

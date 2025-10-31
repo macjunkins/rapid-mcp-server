@@ -1,0 +1,17 @@
+.{
+    .name = .rapid_mcp_server,
+    .version = "0.0.0",
+    .minimum_zig_version = "0.15.1",
+    .fingerprint = 0x3f3610788dd52238,
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+    .dependencies = .{
+        .zigjr = .{
+            .url = "https://github.com/williamw520/zigjr/archive/1a783c5c7c01143001db2112d6feb4eb546dba0a.tar.gz",
+            .hash = "1220a502a3b10ff011ce525dbc00e5268697b423412bea1af72aa750094faf760b96",
+        },
+    },
+}

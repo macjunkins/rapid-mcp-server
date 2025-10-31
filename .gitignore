@@ -1,13 +1,16 @@
-node_modules/
-dist/
-build/
-.env
-.env.*
-coverage/
-logs/
-*.log
-*.lock-wip
+# Zig build outputs
+zig-out/
+.zig-cache/
+**/.zig-cache/
+
+# macOS cruft
 .DS_Store
-.turbo/
-.vite/
-tmp/
+
+# IDE configurations
+.idea/
+.vscode/
+
+# Temporary files
+.gh_comment_*.md
+*-troubleshooting-*.md
+*.txt
